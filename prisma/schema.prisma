@@ -1,0 +1,85 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  productos Producto[]
+}
+
+model Producto {
+  id           Int                    @id @default(autoincrement())
+  sku          String                 @unique
+  nombre       String
+  categoriaId  Int
+  categoria    Categoria              @relation(fields: [categoriaId], references: [id])
+  unidad       String                 @default("UND")
+  precioCompra Int
+  precioVenta  Int
+  stock        Int                    @default(0)
+  stockMinimo  Int                    @default(5)
+  activo       Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  movimientos  MovimientoInventario[]
+  items        VentaItem[]
+}
+
+model MovimientoInventario {
+  id              Int       @id @default(autoincrement())
+  productoId      Int
+  producto        Producto  @relation(fields: [productoId], references: [id])
+  tipo            String
+  cantidad        Int
+  stockResultante Int
+  motivo          String?
+  ventaId         Int?
+  venta           Venta?    @relation(fields: [ventaId], references: [id])
+  createdAt       DateTime  @default(now())
+}
+
+model Venta {
+  id              Int                    @id @default(autoincrement())
+  correlativo     String                 @unique
+  clienteNombre   String?
+  clienteDoc      String?
+  clienteTelefono String?
+  subtotal        Int
+  igv             Int
+  total           Int
+  metodoPago      String
+  estado          String                 @default("PAGADA")
+  referenciaPago  String?
+  createdAt       DateTime               @default(now())
+  items           VentaItem[]
+  movimientos     MovimientoInventario[]
+}
+
+model VentaItem {
+  id             Int      @id @default(autoincrement())
+  ventaId        Int
+  venta          Venta    @relation(fields: [ventaId], references: [id])
+  productoId     Int
+  producto       Producto @relation(fields: [productoId], references: [id])
+  descripcion    String
+  cantidad       Int
+  precioUnitario Int
+  subtotal       Int
+}
+
+model Configuracion {
+  id              Int    @id @default(1)
+  nombreFerreteria String @default("Ferretería El Tornillo de Oro")
+  ruc             String @default("20512345678")
+  direccion       String @default("Av. Los Constructores 1234 - Lima")
+  telefono        String @default("(01) 555-4321")
+  igvPorcentaje   Int    @default(18)
+  serieBoleta     String @default("B001")
+  contadorBoleta  Int    @default(0)
+}
